@@ -73,6 +73,7 @@ class Recognizer:
         cutoff=0.0,
         topapprox=0.0,
         getproduct=False,
+        hideblank=False,
     ):
         # recognize a single file
 
@@ -112,5 +113,6 @@ class Recognizer:
             cutoff=cutoff,
             topapprox=topapprox,
             getproduct=getproduct,
+            hideblank=hideblank,
         )
         return token

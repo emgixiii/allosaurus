@@ -97,9 +97,14 @@ if __name__ == "__main__":
     parser.add_argument(
         "-gp",
         "--getproduct",
-        type=bool,
-        default=False,
+        action="store_true",
         help="print all products",
+    )
+    parser.add_argument(
+        "-hb",
+        "--hideblank",
+        action="store_true",
+        help="show blank as .",
     )
 
     args = parser.parse_args()
@@ -143,6 +148,7 @@ if __name__ == "__main__":
                 args.cutoff,
                 args.topapprox,
                 args.getproduct,
+                args.hideblank,
             )
 
             # output format would be different when using timestamp
@@ -175,6 +181,7 @@ if __name__ == "__main__":
             args.cutoff,
             args.topapprox,
             args.getproduct,
+            args.hideblank,
         )
 
         if output_fd:

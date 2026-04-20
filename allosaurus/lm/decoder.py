@@ -32,6 +32,7 @@ class PhoneDecoder:
         cutoff=0.0,
         topapprox=1.0,
         getproduct=False,
+        hideblank=True,
     ):
         """
         decode phones from logits
@@ -40,6 +41,8 @@ class PhoneDecoder:
         :param emit: blank factor
         :return:
         """
+
+        blank = "" if hideblank else "."
 
         # apply mask if lang_id specified, this is to restrict the output phones to the desired phone subset
 
@@ -64,7 +67,7 @@ class PhoneDecoder:
 
             if topk == 1:
                 phones_str = "".join(
-                    token if idx != 0 else "."
+                    token if idx != 0 else blank
                     for idx, token, prob in zip(
                         top_phones, mask.get_units(top_phones), top_probs
                     )
@@ -77,7 +80,7 @@ class PhoneDecoder:
                     decoded_seq.append(phones_str)
             else:
                 phone_prob_lst = [
-                    f"{token} ({prob:.3f})" if idx != 0 else f". ({prob:.3f})"
+                    f"{token} ({prob:.3f})" if idx != 0 else f"{blank} ({prob:.3f})"
                     for idx, token, prob in zip(
                         top_phones, mask.get_units(top_phones), top_probs
                     )
@@ -94,7 +97,7 @@ class PhoneDecoder:
                 if getproduct:
                     prod_list.append(
                         [
-                            str(token) if idx != 0 else "."
+                            str(token) if idx != 0 else blank
                             for idx, token, prob in zip(
                                 top_phones, mask.get_units(top_phones), top_probs
                             )
