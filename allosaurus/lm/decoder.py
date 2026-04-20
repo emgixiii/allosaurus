@@ -22,7 +22,9 @@ class PhoneDecoder:
 
         self.unit = self.inventory.unit
 
-    def compute(self, logits, lang_id=None, topk=1, emit=1.0, timestamp=False):
+    def compute(
+        self, logits, lang_id=None, topk=1, emit=1.0, timestamp=False, cutoff=0.0
+    ):
         """
         decode phones from logits
 
@@ -52,26 +54,32 @@ class PhoneDecoder:
 
             if topk == 1:
                 phones_str = "".join(
-                    m if idx != 0 else "."
-                    for idx, m in zip(top_phones, mask.get_units(top_phones))
+                    token if idx != 0 else "."
+                    for idx, token, prob in zip(
+                        top_phones, mask.get_units(top_phones), top_probs
+                    )
+                    if prob >= cutoff
                 )
                 if timestamp:
                     phones_str = stamp + phones_str
 
-                decoded_seq.append(phones_str)
+                if phones_str:
+                    decoded_seq.append(phones_str)
             else:
                 phone_prob_lst = [
-                    f"{phone} ({prob:.3f})" if idx != 0 else f". ({prob:.3f})"
-                    for phone, prob, idx in zip(
-                        mask.get_units(top_phones), top_probs, top_phones
+                    f"{token} ({prob:.3f})" if idx != 0 else f". ({prob:.3f})"
+                    for idx, token, prob in zip(
+                        top_phones, mask.get_units(top_phones), top_probs
                     )
+                    if prob >= cutoff
                 ]
                 phones_str = " ".join(phone_prob_lst)
 
                 if timestamp:
                     phones_str = stamp + phones_str
 
-                decoded_seq.append(phones_str)
+                if phones_str:
+                    decoded_seq.append(phones_str)
 
         if timestamp:
             phones = "\n".join(decoded_seq)

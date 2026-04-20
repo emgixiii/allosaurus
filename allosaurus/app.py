@@ -9,18 +9,21 @@ from allosaurus.model import resolve_model_name, get_all_models
 from argparse import Namespace
 from io import BytesIO
 
-def read_recognizer(inference_config_or_name='latest', alt_model_path=None):
+
+def read_recognizer(inference_config_or_name="latest", alt_model_path=None):
     if alt_model_path:
         if not alt_model_path.exists():
             download_model(inference_config_or_name, alt_model_path)
     # download specified model automatically if no model exists
     if len(get_all_models()) == 0:
-        download_model('latest', alt_model_path)
+        download_model("latest", alt_model_path)
 
     # create default config if input is the model's name
     if isinstance(inference_config_or_name, str):
         model_name = resolve_model_name(inference_config_or_name, alt_model_path)
-        inference_config = Namespace(model=model_name, device_id=-1, lang='ipa', approximate=False, prior=None)
+        inference_config = Namespace(
+            model=model_name, device_id=-1, lang="ipa", approximate=False, prior=None
+        )
     else:
         assert isinstance(inference_config_or_name, Namespace)
         inference_config = inference_config_or_name
@@ -28,9 +31,9 @@ def read_recognizer(inference_config_or_name='latest', alt_model_path=None):
     if alt_model_path:
         model_path = alt_model_path / inference_config.model
     else:
-        model_path = Path(__file__).parent / 'pretrained' / inference_config.model
+        model_path = Path(__file__).parent / "pretrained" / inference_config.model
 
-    if inference_config.model == 'latest' and not model_path.exists():
+    if inference_config.model == "latest" and not model_path.exists():
         download_model(inference_config, alt_model_path)
 
     assert model_path.exists(), f"{inference_config.model} is not a valid model"
@@ -46,8 +49,8 @@ def read_recognizer(inference_config_or_name='latest', alt_model_path=None):
 
     return Recognizer(pm, am, lm, inference_config)
 
-class Recognizer:
 
+class Recognizer:
     def __init__(self, pm, am, lm, config):
 
         self.pm = pm
@@ -60,12 +63,16 @@ class Recognizer:
 
         return self.lm.inventory.is_available(lang_id)
 
-    def recognize(self, filename, lang_id='ipa', topk=1, emit=1.0, timestamp=False):
+    def recognize(
+        self, filename, lang_id="ipa", topk=1, emit=1.0, timestamp=False, cutoff=0.0
+    ):
         # recognize a single file
 
         # filename check (skipping for BytesIO objects)
         if not isinstance(filename, BytesIO):
-            assert str(filename).endswith('.wav'), "only wave file is supported in allosaurus"
+            assert str(filename).endswith(".wav"), (
+                "only wave file is supported in allosaurus"
+            )
 
         # load wav audio
         audio = read_audio(filename)
@@ -77,7 +84,9 @@ class Recognizer:
         feats = np.expand_dims(feat, 0)
         feat_len = np.array([feat.shape[0]], dtype=np.int32)
 
-        tensor_batch_feat, tensor_batch_feat_len = move_to_tensor([feats, feat_len], self.config.device_id)
+        tensor_batch_feat, tensor_batch_feat_len = move_to_tensor(
+            [feats, feat_len], self.config.device_id
+        )
 
         tensor_batch_lprobs = self.am(tensor_batch_feat, tensor_batch_feat_len)
 
@@ -86,5 +95,12 @@ class Recognizer:
         else:
             batch_lprobs = tensor_batch_lprobs.detach().numpy()
 
-        token = self.lm.compute(batch_lprobs[0], lang_id, topk, emit=emit, timestamp=timestamp)
+        token = self.lm.compute(
+            batch_lprobs[0],
+            lang_id,
+            topk,
+            emit=emit,
+            timestamp=timestamp,
+            cutoff=cutoff,
+        )
         return token
