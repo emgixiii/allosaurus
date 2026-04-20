@@ -4,4 +4,13 @@ version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.11"
-dependencies = []
+dependencies = [
+    "editdistance>=0.8.1",
+    "numpy>=2.4.4",
+    "panphon>=0.22.2",
+    "requests>=2.33.1",
+    "resampy>=0.4.3",
+    "scipy>=1.17.1",
+    "torch>=2.11.0",
+    "tqdm>=4.67.3",
+]
