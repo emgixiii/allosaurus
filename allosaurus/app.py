@@ -72,6 +72,7 @@ class Recognizer:
         timestamp=False,
         cutoff=0.0,
         topapprox=0.0,
+        getproduct=False,
     ):
         # recognize a single file
 
@@ -110,5 +111,6 @@ class Recognizer:
             timestamp=timestamp,
             cutoff=cutoff,
             topapprox=topapprox,
+            getproduct=getproduct,
         )
         return token

@@ -92,7 +92,14 @@ if __name__ == "__main__":
         type=float,
         required=False,
         default=0.0,
-        help="cutoff threshold for probabilities",
+        help="cutoff threshold for probabilities as a percent of best",
+    )
+    parser.add_argument(
+        "-gp",
+        "--getproduct",
+        type=bool,
+        default=False,
+        help="print all products",
     )
 
     args = parser.parse_args()
@@ -135,6 +142,7 @@ if __name__ == "__main__":
                 args.timestamp,
                 args.cutoff,
                 args.topapprox,
+                args.getproduct,
             )
 
             # output format would be different when using timestamp
@@ -166,6 +174,7 @@ if __name__ == "__main__":
             args.timestamp,
             args.cutoff,
             args.topapprox,
+            args.getproduct,
         )
 
         if output_fd:
@@ -175,4 +184,3 @@ if __name__ == "__main__":
 
     if output_fd:
         output_fd.close()
-
