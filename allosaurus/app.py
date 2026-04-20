@@ -64,7 +64,14 @@ class Recognizer:
         return self.lm.inventory.is_available(lang_id)
 
     def recognize(
-        self, filename, lang_id="ipa", topk=1, emit=1.0, timestamp=False, cutoff=0.0
+        self,
+        filename,
+        lang_id="ipa",
+        topk=1,
+        emit=1.0,
+        timestamp=False,
+        cutoff=0.0,
+        topapprox=0.0,
     ):
         # recognize a single file
 
@@ -102,5 +109,6 @@ class Recognizer:
             emit=emit,
             timestamp=timestamp,
             cutoff=cutoff,
+            topapprox=topapprox,
         )
         return token

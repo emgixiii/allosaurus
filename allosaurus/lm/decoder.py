@@ -23,7 +23,14 @@ class PhoneDecoder:
         self.unit = self.inventory.unit
 
     def compute(
-        self, logits, lang_id=None, topk=1, emit=1.0, timestamp=False, cutoff=0.0
+        self,
+        logits,
+        lang_id=None,
+        topk=1,
+        emit=1.0,
+        timestamp=False,
+        cutoff=0.0,
+        topapprox=1.0,
     ):
         """
         decode phones from logits
@@ -47,6 +54,7 @@ class PhoneDecoder:
 
             top_phones = logit.argsort()[-topk:][::-1]
             top_probs = sorted(probs)[-topk:][::-1]
+            best_prob = top_probs[0]
 
             stamp = (
                 f"{self.config.window_shift * idx:.3f} {self.config.window_size:.3f} "
@@ -58,7 +66,7 @@ class PhoneDecoder:
                     for idx, token, prob in zip(
                         top_phones, mask.get_units(top_phones), top_probs
                     )
-                    if prob >= cutoff
+                    if prob >= max(cutoff, best_prob * topapprox)
                 )
                 if timestamp:
                     phones_str = stamp + phones_str
@@ -71,7 +79,7 @@ class PhoneDecoder:
                     for idx, token, prob in zip(
                         top_phones, mask.get_units(top_phones), top_probs
                     )
-                    if prob >= cutoff
+                    if prob >= max(cutoff, best_prob * topapprox)
                 ]
                 phones_str = " ".join(phone_prob_lst)
 

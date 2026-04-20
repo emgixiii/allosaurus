@@ -86,6 +86,14 @@ if __name__ == "__main__":
         default=0.0,
         help="cutoff threshold for probabilities",
     )
+    parser.add_argument(
+        "-ta",
+        "--topapprox",
+        type=float,
+        required=False,
+        default=0.0,
+        help="cutoff threshold for probabilities",
+    )
 
     args = parser.parse_args()
 
@@ -120,7 +128,13 @@ if __name__ == "__main__":
         wav_list = sorted(list(input_path.glob("*.wav")))
         for wav_path in wav_list:
             phones = recognizer.recognize(
-                str(wav_path), args.lang, args.topk, args.emit, args.timestamp
+                str(wav_path),
+                args.lang,
+                args.topk,
+                args.emit,
+                args.timestamp,
+                args.cutoff,
+                args.topapprox,
             )
 
             # output format would be different when using timestamp
@@ -145,7 +159,13 @@ if __name__ == "__main__":
 
         # run inference
         phones = recognizer.recognize(
-            args.input, args.lang, args.topk, args.emit, args.timestamp, args.cutoff
+            args.input,
+            args.lang,
+            args.topk,
+            args.emit,
+            args.timestamp,
+            args.cutoff,
+            args.topapprox,
         )
 
         if output_fd:
