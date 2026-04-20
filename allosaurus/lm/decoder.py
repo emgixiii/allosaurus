@@ -61,8 +61,10 @@ class PhoneDecoder:
                 decoded_seq.append(phones_str)
             else:
                 phone_prob_lst = [
-                    f"{phone} ({prob:.3f})"
-                    for phone, prob in zip(mask.get_units(top_phones), top_probs)
+                    f"{phone} ({prob:.3f})" if idx != 0 else f". ({prob:.3f})"
+                    for phone, prob, idx in zip(
+                        mask.get_units(top_phones), top_probs, top_phones
+                    )
                 ]
                 phones_str = " ".join(phone_prob_lst)
 
@@ -76,7 +78,6 @@ class PhoneDecoder:
         elif topk == 1:
             phones = "".join(decoded_seq)
         else:
-            phones = " | ".join(decoded_seq)
+            phones = "\n".join(decoded_seq)
 
         return phones
-
