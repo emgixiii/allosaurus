@@ -141,7 +141,13 @@ class PhoneDecoder:
             collapsed_phones = [k for k, g in groupby(filtered_seq)]
             phones = "".join(collapsed_phones)
         elif getproduct:
-            phones = "\n".join(["".join(poss_str) for poss_str in product(*prod_list)])
+            unique_collapsed_products = set()
+            for poss_str_tuple in product(*prod_list):
+                # Apply collapsing to each product path
+                filtered_seq = [k for k in poss_str_tuple if k != "."]
+                collapsed_path = "".join([k for k, g in groupby(filtered_seq)])
+                unique_collapsed_products.add(collapsed_path)
+            phones = "\n".join(sorted(list(unique_collapsed_products)))
         else:
             phones = "\n".join(decoded_seq)
 
