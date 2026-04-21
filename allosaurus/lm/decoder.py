@@ -33,7 +33,7 @@ class PhoneDecoder:
         topapprox=1.0,
         getproduct=False,
         hideblank=True,
-        interleave=1
+        interleave=1,
     ):
         """
         decode phones from logits
@@ -47,7 +47,9 @@ class PhoneDecoder:
 
         # Adjust effective window shift and size
         eff_window_shift = self.config.window_shift / interleave
-        eff_window_size = self.config.window_size # Window size remains the same (0.025s)
+        eff_window_size = (
+            self.config.window_size
+        )  # Window size remains the same (0.025s)
 
         # apply mask if lang_id specified
         mask = self.inventory.get_mask(lang_id, approximation=self.config.approximate)
@@ -65,9 +67,7 @@ class PhoneDecoder:
             top_probs = sorted(probs)[-topk:][::-1]
             best_prob = top_probs[0]
 
-            stamp = (
-                f"{eff_window_shift * idx:.3f} {eff_window_size:.3f} "
-            )
+            stamp = f"{eff_window_shift * idx:.3f} {eff_window_size:.3f} "
 
             if topk == 1:
                 phones_str = "".join(
@@ -110,27 +110,40 @@ class PhoneDecoder:
                     )
 
         if timestamp:
-            # Group identical consecutive phones and take the first timestamp
+            # Group identical consecutive phones and calculate start and end timestamps
             collapsed_output = []
             current_phone = None
-            start_stamp = None
-            for line in decoded_seq:
-                parts = line.split(' ')
-                stamp = f"{float(parts[0]):.3f} {float(parts[1]):.3f}"
-                phone = parts[2] if len(parts) > 2 else ''
+            start_time = None
+            end_time = None
 
-                if phone != '.' and phone != current_phone: # . is blank token, collapse if not blank and different from current
+            for line in decoded_seq:
+                parts = line.split(" ", 2)
+                if len(parts) < 3:
+                    continue
+
+                f_start = float(parts[0])
+                f_dur = float(parts[1])
+                f_end = f_start + f_dur
+                phone = parts[2]
+
+                if phone == "." or phone == "":
                     if current_phone is not None:
-                        collapsed_output.append(f"{start_stamp} {current_phone}")
+                        collapsed_output.append(f"{start_time:.3f} {end_time:.3f} {current_phone}")
+                        current_phone = None
+                    continue
+
+                if phone != current_phone:
+                    if current_phone is not None:
+                        collapsed_output.append(f"{start_time:.3f} {end_time:.3f} {current_phone}")
                     current_phone = phone
-                    start_stamp = stamp
-                elif phone == '.' and current_phone is not None: # if current is a phone and current is blank, reset
-                    collapsed_output.append(f"{start_stamp} {current_phone}")
-                    current_phone = None
-                    start_stamp = None
+                    start_time = f_start
+                    end_time = f_end
+                else:
+                    # same phone, update end_time
+                    end_time = f_end
 
             if current_phone is not None:
-                collapsed_output.append(f"{start_stamp} {current_phone}")
+                collapsed_output.append(f"{start_time:.3f} {end_time:.3f} {current_phone}")
 
             phones = "\n".join(collapsed_output)
         elif topk == 1:

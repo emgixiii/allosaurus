@@ -18,7 +18,7 @@ def read_lm(model_path, inference_config):
 
     # import configs from pm config
     inference_config.window_size = pm_config.window_size + (pm_config.feature_window - 1)*pm_config.window_shift
-    inference_config.window_shift = (pm_config.window_shift*pm_config.feature_window) / inference_config.interleave
+    inference_config.window_shift = (pm_config.window_shift*pm_config.feature_window)
 
     model = PhoneDecoder(model_path, inference_config)
     return model

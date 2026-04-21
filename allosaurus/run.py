@@ -51,8 +51,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "-t",
         "--timestamp",
-        type=bool,
-        default=False,
+        action="store_true",
         help="attach *approximate* timestamp for each phone, note that the timestamp might not be accurate",
     )
     parser.add_argument(
