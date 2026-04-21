@@ -1,6 +1,6 @@
 from allosaurus.am.utils import *
 from pathlib import Path
-from allosaurus.audio import read_audio
+from allosaurus.audio import read_audio, Audio
 from allosaurus.pm.factory import read_pm
 from allosaurus.am.factory import read_am
 from allosaurus.lm.factory import read_lm
@@ -85,16 +85,45 @@ class Recognizer:
 
         # load wav audio
         audio = read_audio(filename)
+        
+        # get interleave factor from config
+        n = getattr(self.config, 'interleave', 1)
+        if n < 1: n = 1
 
-        # extract feature
-        feat = self.pm.compute(audio)
+        # original window shift (in seconds)
+        window_shift = self.lm.config.window_shift
+        
+        # calculate sample offsets
+        offset_samples = [int(audio.sample_rate * (window_shift / n) * i) for i in range(n)]
+        
+        all_feats = []
+        feat_lengths = []
+        
+        for offset in offset_samples:
+            # create a temporary audio object with offset samples
+            if offset > 0:
+                offset_audio = Audio(audio.samples[offset:], audio.sample_rate)
+            else:
+                offset_audio = audio
+            
+            # extract feature for this offset
+            feat = self.pm.compute(offset_audio)
+            all_feats.append(feat)
+            feat_lengths.append(feat.shape[0])
 
-        # add batch dim
-        feats = np.expand_dims(feat, 0)
-        feat_len = np.array([feat.shape[0]], dtype=np.int32)
+        # find max length for padding if needed (though they should be very similar)
+        max_len = max(feat_lengths)
+        dim = all_feats[0].shape[1]
+        
+        # create batch tensor
+        batch_feats = np.zeros((n, max_len, dim), dtype=np.float32)
+        for i, feat in enumerate(all_feats):
+            batch_feats[i, :feat_lengths[i], :] = feat
+        
+        batch_feat_len = np.array(feat_lengths, dtype=np.int32)
 
         tensor_batch_feat, tensor_batch_feat_len = move_to_tensor(
-            [feats, feat_len], self.config.device_id
+            [batch_feats, batch_feat_len], self.config.device_id
         )
 
         tensor_batch_lprobs = self.am(tensor_batch_feat, tensor_batch_feat_len)
@@ -104,8 +133,18 @@ class Recognizer:
         else:
             batch_lprobs = tensor_batch_lprobs.detach().numpy()
 
+        # batch_lprobs shape: (n, T, phones)
+        # Interleave the results
+        # We take indices [0,0], [1,0], [2,0], [0,1], [1,1], [2,1]...
+        # We need to be careful about different T if offsets cause different frame counts
+        min_t = min(feat_lengths)
+        
+        # Interleave logits
+        # Reshape to (T, n, phones) then (T*n, phones)
+        interleaved_lprobs = batch_lprobs[:, :min_t, :].transpose(1, 0, 2).reshape(-1, batch_lprobs.shape[2])
+
         token = self.lm.compute(
-            batch_lprobs[0],
+            interleaved_lprobs,
             lang_id,
             topk,
             emit=emit,
@@ -114,5 +153,6 @@ class Recognizer:
             topapprox=topapprox,
             getproduct=getproduct,
             hideblank=hideblank,
+            interleave=n
         )
         return token
