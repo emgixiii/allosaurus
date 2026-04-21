@@ -202,6 +202,10 @@ class PhoneDecoder:
             phones = "".join(collapsed_phones)
         elif getproduct:
             unique_collapsed_products = set()
+            eff_window_shift = self.config.window_shift / interleave
+            eff_window_size = (
+                self.config.window_size
+            )  # Window size remains the same (0.025s)
             for poss_str_tuple in product(*prod_list):
                 # Apply majority filter for robustness if interleave > 1
                 if interleave > 1:
@@ -209,7 +213,15 @@ class PhoneDecoder:
 
                 # Apply collapsing to each product path
                 filtered_seq = [k for k in poss_str_tuple if k != "."]
-                collapsed_path = "".join([k for k, g in groupby(filtered_seq)])
+                # Adjust effective window shift and size
+                curr = 0
+                stamped_data = []
+                for k, g in groupby(filtered_seq):
+                    dur = sum(1 for _ in g)
+                    stamp = f"{eff_window_shift * curr:.3f} {eff_window_shift * (curr + dur):.3f} "
+                    stamped_data.append(stamp + k)
+                    curr += dur
+                collapsed_path = "|||".join(stamped_data)
                 unique_collapsed_products.add(collapsed_path)
             phones = "\n".join(sorted(list(unique_collapsed_products)))
         else:
