@@ -135,10 +135,10 @@ class PhoneDecoder:
             phones = "\n".join(collapsed_output)
         elif topk == 1:
             # Apply collapsing for non-timestamped output
-            collapsed_phones = []
-            for k, g in groupby(decoded_seq):
-                if k != ".": # Ignore blank tokens
-                    collapsed_phones.append(k)
+            # 1. Filter out all blank tokens ('.')
+            filtered_seq = [k for k in decoded_seq if k != "."]
+            # 2. Apply groupby to collapse consecutive identical phonemes
+            collapsed_phones = [k for k, g in groupby(filtered_seq)]
             phones = "".join(collapsed_phones)
         elif getproduct:
             phones = "\n".join(["".join(poss_str) for poss_str in product(*prod_list)])
