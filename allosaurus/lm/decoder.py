@@ -33,6 +33,7 @@ class PhoneDecoder:
         topapprox=1.0,
         getproduct=False,
         hideblank=True,
+        interleave=1
     ):
         """
         decode phones from logits
@@ -44,8 +45,11 @@ class PhoneDecoder:
 
         blank = "" if hideblank else "."
 
-        # apply mask if lang_id specified, this is to restrict the output phones to the desired phone subset
+        # Adjust effective window shift and size
+        eff_window_shift = self.config.window_shift / interleave
+        eff_window_size = self.config.window_size # Window size remains the same (0.025s)
 
+        # apply mask if lang_id specified
         mask = self.inventory.get_mask(lang_id, approximation=self.config.approximate)
 
         logits = mask.mask_logits(logits)
@@ -62,7 +66,7 @@ class PhoneDecoder:
             best_prob = top_probs[0]
 
             stamp = (
-                f"{self.config.window_shift * idx:.3f} {self.config.window_size:.3f} "
+                f"{eff_window_shift * idx:.3f} {eff_window_size:.3f} "
             )
 
             if topk == 1:
