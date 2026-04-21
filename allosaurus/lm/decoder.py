@@ -69,7 +69,7 @@ class PhoneDecoder:
         :return:
         """
 
-        blank = "" if hideblank else "."
+        blank = "" if hideblank else "<b>"
 
         # Adjust effective window shift and size
         eff_window_shift = self.config.window_shift / interleave
@@ -86,6 +86,7 @@ class PhoneDecoder:
         prod_list = []
         for idx in range(len(logits)):
             logit = logits[idx]
+            logit[0] /= emit
             exp_prob = np.exp(logit - np.max(logit))
             probs = exp_prob / exp_prob.sum()
 
@@ -164,13 +165,17 @@ class PhoneDecoder:
 
                 if phone == "." or phone == "":
                     if current_phone is not None:
-                        collapsed_output.append(f"{start_time:.3f} {end_time:.3f} {current_phone}")
+                        collapsed_output.append(
+                            f"{start_time:.3f} {end_time:.3f} {current_phone}"
+                        )
                         current_phone = None
                     continue
 
                 if phone != current_phone:
                     if current_phone is not None:
-                        collapsed_output.append(f"{start_time:.3f} {end_time:.3f} {current_phone}")
+                        collapsed_output.append(
+                            f"{start_time:.3f} {end_time:.3f} {current_phone}"
+                        )
                     current_phone = phone
                     start_time = f_start
                     end_time = f_end
@@ -179,7 +184,9 @@ class PhoneDecoder:
                     end_time = f_end
 
             if current_phone is not None:
-                collapsed_output.append(f"{start_time:.3f} {end_time:.3f} {current_phone}")
+                collapsed_output.append(
+                    f"{start_time:.3f} {end_time:.3f} {current_phone}"
+                )
 
             phones = "\n".join(collapsed_output)
         elif topk == 1:
