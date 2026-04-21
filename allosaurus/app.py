@@ -22,7 +22,7 @@ def read_recognizer(inference_config_or_name="latest", alt_model_path=None):
     if isinstance(inference_config_or_name, str):
         model_name = resolve_model_name(inference_config_or_name, alt_model_path)
         inference_config = Namespace(
-            model=model_name, device_id=-1, lang="ipa", approximate=False, prior=None
+            model=model_name, device_id=-1, lang="ipa", approximate=False, prior=None, interleave=1
         )
     else:
         assert isinstance(inference_config_or_name, Namespace)

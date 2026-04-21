@@ -72,10 +72,16 @@ if __name__ == "__main__":
         help="specify how many phones to emit. A larger number can emit more phones and a smaller number would suppress emission, default is 1.0",
     )
     parser.add_argument(
+        "-n",
+        "--interleave",
+        type=int,
+        default=1,
+        help="specify how many sub-frame offset passes to interleave. A larger number (e.g. 3) can improve robustness at the cost of computation",
+    )
+    parser.add_argument(
         "-a",
         "--approximate",
-        type=bool,
-        default=False,
+        action="store_true",
         help="the phone inventory can still hardly to cover all phones. You can use turn on this flag to map missing phones to other similar phones to recognize. The similarity is measured with phonological features",
     )
     parser.add_argument(
