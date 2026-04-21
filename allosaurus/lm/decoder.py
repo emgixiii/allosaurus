@@ -110,9 +110,36 @@ class PhoneDecoder:
                     )
 
         if timestamp:
-            phones = "\n".join(decoded_seq)
+            # Group identical consecutive phones and take the first timestamp
+            collapsed_output = []
+            current_phone = None
+            start_stamp = None
+            for line in decoded_seq:
+                parts = line.split(' ')
+                stamp = f"{float(parts[0]):.3f} {float(parts[1]):.3f}"
+                phone = parts[2] if len(parts) > 2 else ''
+
+                if phone != '.' and phone != current_phone: # . is blank token, collapse if not blank and different from current
+                    if current_phone is not None:
+                        collapsed_output.append(f"{start_stamp} {current_phone}")
+                    current_phone = phone
+                    start_stamp = stamp
+                elif phone == '.' and current_phone is not None: # if current is a phone and current is blank, reset
+                    collapsed_output.append(f"{start_stamp} {current_phone}")
+                    current_phone = None
+                    start_stamp = None
+
+            if current_phone is not None:
+                collapsed_output.append(f"{start_stamp} {current_phone}")
+
+            phones = "\n".join(collapsed_output)
         elif topk == 1:
-            phones = "".join(decoded_seq)
+            # Apply collapsing for non-timestamped output
+            collapsed_phones = []
+            for k, g in groupby(decoded_seq):
+                if k != ".": # Ignore blank tokens
+                    collapsed_phones.append(k)
+            phones = "".join(collapsed_phones)
         elif getproduct:
             phones = "\n".join(["".join(poss_str) for poss_str in product(*prod_list)])
         else:
